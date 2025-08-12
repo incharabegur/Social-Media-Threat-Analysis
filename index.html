@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sender-Receiver Interaction</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 30px auto;
+            background: white;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        textarea {
+            width: 100%;
+            height: 80px;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .message {
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .sender-message {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .receiver-notification.safe {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .receiver-notification.threat {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .threat-image {
+            margin-top: 5px;
+            max-width: 50px; /* Set the maximum width of the image */
+            height: 50px;     /* Maintain the aspect ratio */
+            display: block;   /* Ensures the image is treated as a block element */
+            margin-left: 50px;
+            margin-right: 50px; /* Centers the image horizontally */
+         }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Sender-Receiver Interaction</h1>
+        
+        <!-- Sender Section -->
+        <div class="section">
+            <h2>Sender</h2>
+            <textarea id="senderMessage" placeholder="Type a message to send..."></textarea>
+            <button id="sendButton">Submit Message</button>
+        </div>
+        
+        <!-- Receiver Section -->
+        <div class="section">
+            <h2>Receiver</h2>
+            <div id="receiverResponse" class="message" style="display: none;"></div>
+            <img id="threatImage" class="threat-image" style="display: none;" alt="Threat Level Image">
+        </div>
+    </div>
+
+    <script>
+        const sendButton = document.getElementById('sendButton');
+        const senderMessageInput = document.getElementById('senderMessage');
+        const receiverResponseDiv = document.getElementById('receiverResponse');
+        const threatImage = document.getElementById('threatImage');
+
+        sendButton.addEventListener('click', () => {
+            const senderMessage = senderMessageInput.value.trim();
+
+            if (!senderMessage) {
+                alert("Sender must input a message.");
+                return;
+            }
+
+            // Send the message to the backend
+            fetch('http://127.0.0.1:5000/analyze', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ message: senderMessage }),
+            })
+                .then(response => response.json())
+                .then(data => {
+                    // Display the receiver's response
+                    receiverResponseDiv.style.display = 'block';
+                    if (data.status === 'threat_detected') {
+                        receiverResponseDiv.className = 'message receiver-notification threat';
+                    } else {
+                        receiverResponseDiv.className = 'message receiver-notification safe';
+                    }
+                    receiverResponseDiv.textContent = `Sender: ${data.sender_message}\nNotification: ${data.receiver_notification}`;
+                    
+                    // Display the threat image
+                    threatImage.style.display = 'block';
+                    threatImage.src = data.image;  // Set the image URL returned from the backend
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        });
+    </script>
+</body>
+</html>
